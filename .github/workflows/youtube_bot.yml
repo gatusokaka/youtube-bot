@@ -20,6 +20,6 @@ jobs:
       - name: 安装依赖
         run: pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client requests
 
-      - name: 运行监视脚本
+       - name: Run script
         run: python youtube-bot/youtube_bot.py
 
