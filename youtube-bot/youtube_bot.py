@@ -2,7 +2,7 @@ import os
 import json
 import time
 from googleapiclient.discovery import build
-from google.oauth2 import service_account
+from google_auth_oauthlib.flow import InstalledAppFlow  # 添加OAuth 2.0认证库
 
 # YouTube API 配置
 API_SERVICE_NAME = "youtube"
@@ -13,18 +13,22 @@ CHANNEL_IDS = [
     "UCLttSYJ6kPtlcurY96kXkQw",
     "UCKcx1uK38H4AOkmfv4ywlrg"
 ]
-CREDENTIALS_FILE = "credentials.json"  # 你的 YouTube API 凭据文件
+CLIENT_SECRET_FILE = "client_secret.json"  # 你的 OAuth 2.0 客户端秘钥文件
+SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 COMMENT_LOG = "commented_videos.json"  # 用于记录已评论过的视频
 
 # 如果通过 GitHub Secrets 提供凭据，则写入文件
-if not os.path.exists(CREDENTIALS_FILE) and os.getenv("YOUTUBE_CREDENTIALS"):
-    with open(CREDENTIALS_FILE, "w") as f:
+if not os.path.exists(CLIENT_SECRET_FILE) and os.getenv("YOUTUBE_CREDENTIALS"):
+    with open(CLIENT_SECRET_FILE, "w") as f:
         f.write(os.getenv("YOUTUBE_CREDENTIALS"))
 
-# 加载 YouTube API 客户端
-credentials = service_account.Credentials.from_service_account_file(
-    CREDENTIALS_FILE, scopes=["https://www.googleapis.com/auth/youtube.force-ssl"]
-)
+def authenticate_youtube():
+    flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_FILE, SCOPES)
+    credentials = flow.run_local_server(port=0)
+    return credentials
+
+# 使用 OAuth 2.0 认证
+credentials = authenticate_youtube()
 youtube = build(API_SERVICE_NAME, API_VERSION, credentials=credentials)
 
 # 加载已评论视频记录（防止重复评论）
