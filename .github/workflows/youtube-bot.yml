@@ -1,1 +1,25 @@
+name: YouTube Monitor
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"  # 每10分钟运行一次
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库代码
+        uses: actions/checkout@v3
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: 安装依赖
+        run: pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client requests
+
+      - name: 运行监视脚本
+        run: python youtube_bot.py
 
