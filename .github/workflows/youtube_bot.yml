@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v3
 
         - name: 检查当前目录（调试）
-        run: pwd && ls -R  # 🔍 调试：打印当前目录结构
+        run: pwd && ls -R  # 调试：打印当前目录结构
 
       - name: 设置 Python 环境
         uses: actions/setup-python@v4
