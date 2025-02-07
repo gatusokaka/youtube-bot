@@ -2,48 +2,61 @@ import os
 import json
 import time
 from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+from google.oauth2 import service_account
 
-# ÄãµÄÄ¿±ê YouTube ÆµµÀ ID
-CHANNEL_ID = "UC_x5XG1OV2P6uZZ5FSM9Ttw"  # Ìæ»»ÎªÄ¿±êÆµµÀID
+# YouTube API é…ç½®
+API_SERVICE_NAME = "youtube"
+API_VERSION = "v3"
+# è¦ç›‘æ§çš„å¤šä¸ªé¢‘é“IDåˆ—è¡¨
+CHANNEL_IDS = [
+    "CHANNEL_ID_1",
+    "CHANNEL_ID_2",
+    "CHANNEL_ID_3"
+]
+CREDENTIALS_FILE = "credentials.json"  # ä½ çš„ YouTube API å‡­æ®æ–‡ä»¶
+COMMENT_LOG = "commented_videos.json"  # ç”¨äºè®°å½•å·²è¯„è®ºè¿‡çš„è§†é¢‘
 
-# ÄãµÄÆÀÂÛÄÚÈİ
-COMMENT_TEXT = "¿ìÀ´¿´¿´Õâ¸ö¾«²ÊÊÓÆµ£¡[²åÈëÄãµÄÊÓÆµÁ´½Ó]"
+# å¦‚æœé€šè¿‡ GitHub Secrets æä¾›å‡­æ®ï¼Œåˆ™å†™å…¥æ–‡ä»¶
+if not os.path.exists(CREDENTIALS_FILE) and os.getenv("YOUTUBE_CREDENTIALS"):
+    with open(CREDENTIALS_FILE, "w") as f:
+        f.write(os.getenv("YOUTUBE_CREDENTIALS"))
 
-# API ×÷ÓÃÓò
-SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
+# åŠ è½½ YouTube API å®¢æˆ·ç«¯
+credentials = service_account.Credentials.from_service_account_file(
+    CREDENTIALS_FILE, scopes=["https://www.googleapis.com/auth/youtube.force-ssl"]
+)
+youtube = build(API_SERVICE_NAME, API_VERSION, credentials=credentials)
 
-# ÈÏÖ¤²¢½¨Á¢ API ·şÎñ
-def youtube_authenticate():
-    creds = None
-    if os.path.exists("token.json"):
-        with open("token.json", "r") as token:
-            creds = json.load(token)
-    
-    if not creds:
-        flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
-        creds = flow.run_local_server(port=0)
-        with open("token.json", "w") as token:
-            json.dump(creds.to_json(), token)
-    
-    return build("youtube", "v3", credentials=creds)
+# åŠ è½½å·²è¯„è®ºè§†é¢‘è®°å½•ï¼ˆé˜²æ­¢é‡å¤è¯„è®ºï¼‰
+if os.path.exists(COMMENT_LOG):
+    with open(COMMENT_LOG, "r") as f:
+        commented_videos = json.load(f)
+else:
+    commented_videos = {}
 
-# »ñÈ¡ÆµµÀ×îĞÂÊÓÆµ
-def get_latest_video(youtube, channel_id):
+def get_latest_video(channel_id):
+    """
+    è·å–æŒ‡å®šé¢‘é“æœ€æ–°ä¸Šä¼ çš„è§†é¢‘çš„ videoId
+    """
     request = youtube.search().list(
-        part="id",
+        part="snippet",
         channelId=channel_id,
         order="date",
         maxResults=1
     )
     response = request.execute()
-    if "items" in response and len(response["items"]) > 0:
-        return response["items"][0]["id"]["videoId"]
+    
+    if "items" in response and response["items"]:
+        video_item = response["items"][0]
+        # è·å– videoIdï¼Œæœ‰æ—¶ search æ¥å£è¿”å›çš„æ˜¯ playlistItem éœ€æ³¨æ„æ­¤å¤„å·®å¼‚
+        video_id = video_item["id"].get("videoId")
+        return video_id
     return None
 
-# ÔÚÊÓÆµÏÂ·½ÆÀÂÛ
-def post_comment(youtube, video_id, comment_text):
+def post_comment(video_id, comment_text="å¥½è§†é¢‘ï¼ç»§ç»­åŠ æ²¹ï¼"):
+    """
+    åœ¨æŒ‡å®šè§†é¢‘ä¸‹å‘è¡¨è¯„è®º
+    """
     request = youtube.commentThreads().insert(
         part="snippet",
         body={
@@ -58,19 +71,26 @@ def post_comment(youtube, video_id, comment_text):
         }
     )
     response = request.execute()
-    return response
+    print(f"å·²åœ¨è§†é¢‘ {video_id} ä¸‹è¯„è®º: {comment_text}")
 
-# Ö÷º¯Êı
-if __name__ == "__main__":
-    youtube = youtube_authenticate()
-    
-    last_video_id = None
+def main():
+    """
+    è½®è¯¢æ£€æŸ¥æ‰€æœ‰æŒ‡å®šé¢‘é“çš„æœ€æ–°è§†é¢‘ï¼Œå¹¶å¯¹æ–°è§†é¢‘å‘è¡¨è¯„è®º
+    """
     while True:
-        video_id = get_latest_video(youtube, CHANNEL_ID)
-        
-        if video_id and video_id != last_video_id:
-            print(f"·¢ÏÖĞÂÊÓÆµ: {video_id}")
-            post_comment(youtube, video_id, COMMENT_TEXT)
-            last_video_id = video_id
-        
-        time.sleep(300)  # Ã¿5·ÖÖÓ¼ì²éÒ»´Î
+        for channel_id in CHANNEL_IDS:
+            video_id = get_latest_video(channel_id)
+            if video_id and video_id not in commented_videos:
+                try:
+                    post_comment(video_id)
+                    commented_videos[video_id] = True
+                    # æ¯æ¬¡è¯„è®ºåä¿å­˜è®°å½•ï¼Œé˜²æ­¢é‡å¤è¯„è®º
+                    with open(COMMENT_LOG, "w") as f:
+                        json.dump(commented_videos, f)
+                except Exception as e:
+                    print(f"è¯„è®ºè§†é¢‘ {video_id} æ—¶å‡ºé”™: {e}")
+        # æ¯10åˆ†é’Ÿæ£€æŸ¥ä¸€æ¬¡ï¼Œå¯æ ¹æ®éœ€æ±‚è°ƒæ•´é—´éš”
+        time.sleep(600)
+
+if __name__ == "__main__":
+    main()
