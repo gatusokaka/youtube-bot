@@ -9,9 +9,9 @@ API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
 # 要监控的多个频道ID列表
 CHANNEL_IDS = [
-    "CHANNEL_ID_1",
-    "CHANNEL_ID_2",
-    "CHANNEL_ID_3"
+    "UCWV3obpZVGgJ3j9FVhEjF2Q",
+    "UCLttSYJ6kPtlcurY96kXkQw",
+    "UCKcx1uK38H4AOkmfv4ywlrg"
 ]
 CREDENTIALS_FILE = "credentials.json"  # 你的 YouTube API 凭据文件
 COMMENT_LOG = "commented_videos.json"  # 用于记录已评论过的视频
