@@ -21,5 +21,5 @@ jobs:
         run: pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client requests
 
       - name: 运行监视脚本
-        run: python youtube_bot.py
+        run: python youtube-bot/youtube_bot.py
 
