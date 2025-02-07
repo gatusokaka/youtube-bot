@@ -23,6 +23,9 @@ jobs:
       - name: 安装依赖
         run: pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client requests
 
+      - name: 创建 credentials.json 文件
+        run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json  # 从 Secrets 生成 credentials.json 文件
+
       - name: Run script
         run: python youtube-bot/youtube_bot.py
 
