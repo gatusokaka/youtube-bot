@@ -12,7 +12,7 @@ jobs:
       - name: 检出仓库代码
         uses: actions/checkout@v3
 
-        - name: 检查当前目录（调试）
+      - name: 检查当前目录（调试）
         run: pwd && ls -R  # 调试：打印当前目录结构
 
       - name: 设置 Python 环境
@@ -23,6 +23,6 @@ jobs:
       - name: 安装依赖
         run: pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client requests
 
-       - name: Run script
+      - name: Run script
         run: python youtube-bot/youtube_bot.py
 
